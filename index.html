@@ -3,256 +3,340 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Char Count — Character Counter with Platform Limits</title>
-<meta name="description" content="Count characters for Twitter, Instagram, LinkedIn, YouTube, SMS. Real-time stats, platform limits, UTF-8 bytes.">
-<meta property="og:title" content="Char Count — Character Counter with Platform Limits">
-<meta property="og:description" content="Count characters for Twitter, Instagram, LinkedIn, YouTube, SMS. Real-time stats, platform limits, UTF-8 bytes.">
+<title>Character Counter — Platform Limits, Reading Time &amp; Word Frequency</title>
+<meta name="description" content="Real-time character counter with platform limits for Twitter, Instagram, LinkedIn, YouTube, SMS and more. Plus reading time, word frequency and byte size.">
+<meta property="og:title" content="Character Counter — Platform Limits, Reading Time &amp; Word Frequency">
+<meta property="og:description" content="Real-time character counter with platform limits for Twitter, Instagram, LinkedIn, YouTube, SMS and more.">
 <meta property="og:type" content="website">
 <meta property="og:url" content="https://yurukusa.github.io/char-count/">
+<meta property="og:image:width" content="1200">
+<meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary">
-<meta name="twitter:title" content="Char Count — Character Counter with Platform Limits">
-<meta name="twitter:description" content="Count characters for Twitter, Instagram, LinkedIn, YouTube, SMS. Real-time stats, platform limits, UTF-8 bytes.">
+<meta name="twitter:title" content="Character Counter — Platform Limits, Reading Time &amp; Word Frequency">
+<meta name="twitter:description" content="Real-time character counter with platform limits for Twitter, Instagram, LinkedIn, YouTube, SMS and more.">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922}
-body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
-a{color:var(--accent);text-decoration:none}
-a:hover{text-decoration:underline}
-header{text-align:center;padding:2rem 1rem 1rem}
-header h1{font-size:1.6rem;font-weight:600;margin-bottom:.4rem}
-header p{color:var(--text2);font-size:.9rem}
-main{max-width:960px;width:100%;margin:0 auto;padding:0 1rem 2rem;flex:1}
-.toolbar{display:flex;gap:.5rem;margin-bottom:.75rem;justify-content:flex-end}
-.toolbar button{background:var(--surface);color:var(--text);border:1px solid var(--border);padding:.4rem 1rem;border-radius:6px;cursor:pointer;font-size:.85rem;transition:border-color .15s}
-.toolbar button:hover{border-color:var(--accent)}
-textarea{width:100%;height:220px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:1rem;font-family:inherit;resize:vertical;outline:none;transition:border-color .15s}
-textarea:focus{border-color:var(--accent)}
+:root{
+  --bg:#0d1117;--surface:#161b22;--border:#30363d;
+  --text:#e6edf3;--text2:#8b949e;
+  --accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;
+}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column;font-size:14px;line-height:1.6}
+/* Header */
+header{background:var(--surface);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;align-items:baseline;gap:12px}
+header h1{font-size:17px;font-weight:700}
+header .sub{color:var(--text2);font-size:12px}
+/* Layout */
+main{max-width:1100px;width:100%;margin:0 auto;padding:20px 16px 40px;flex:1;display:flex;flex-direction:column;gap:18px}
+/* Input area */
+.input-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.input-toolbar{display:flex;align-items:center;justify-content:space-between;padding:9px 14px;border-bottom:1px solid var(--border);gap:8px;flex-wrap:wrap}
+.input-label{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em}
+.btn-group{display:flex;gap:6px}
+button{background:var(--bg);color:var(--text);border:1px solid var(--border);border-radius:6px;padding:5px 13px;font-size:12px;font-family:inherit;cursor:pointer;transition:border-color .15s,background .15s}
+button:hover{border-color:var(--text2);background:#1c2128}
+button.primary{background:var(--accent);color:#000;border-color:var(--accent);font-weight:600}
+button.primary:hover{opacity:.85}
+textarea{width:100%;min-height:200px;background:transparent;border:none;outline:none;color:var(--text);font-family:inherit;font-size:15px;line-height:1.7;padding:14px;resize:vertical}
 textarea::placeholder{color:var(--text2)}
-.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem;margin:1.25rem 0}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;text-align:center}
-.stat-card .value{font-size:1.5rem;font-weight:700;color:var(--accent)}
-.stat-card .label{font-size:.75rem;color:var(--text2);margin-top:.2rem;text-transform:uppercase;letter-spacing:.04em}
-h2{font-size:1.1rem;font-weight:600;margin:1.5rem 0 .75rem;color:var(--text)}
-.platform-list{display:flex;flex-direction:column;gap:.6rem}
-.platform{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem}
-.platform-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
-.platform-name{font-size:.85rem;font-weight:600}
-.platform-count{font-size:.8rem;color:var(--text2)}
-.platform-count .pct{margin-left:.4rem;font-size:.75rem}
-.bar-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
-.bar-fill{height:100%;border-radius:3px;transition:width .15s,background .15s}
-.platform .note{font-size:.75rem;color:var(--text2);margin-top:.35rem}
-.freq-section{margin-top:1.5rem}
-.freq-table{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;border-spacing:0}
-.freq-table th,.freq-table td{padding:.5rem .75rem;text-align:left;font-size:.85rem;border-bottom:1px solid var(--border)}
-.freq-table th{color:var(--text2);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
-.freq-table tr:last-child td{border-bottom:none}
-.freq-table .char-cell{font-family:"SFMono-Regular",Consolas,monospace;font-size:.95rem;min-width:3rem}
-.freq-table .bar-cell{width:50%}
-.freq-bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
-.freq-bar{height:100%;background:var(--accent);border-radius:2px}
-.empty-msg{color:var(--text2);font-size:.85rem;padding:1rem;text-align:center}
-footer{text-align:center;padding:1.5rem;color:var(--text2);font-size:.85rem;border-top:1px solid var(--border);margin-top:2rem}
-@media(max-width:600px){
-  .stats-grid{grid-template-columns:repeat(3,1fr);gap:.5rem}
-  .stat-card .value{font-size:1.2rem}
-  textarea{height:160px}
+/* Stats grid */
+.stats-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:10px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px}
+.stat-val{font-size:24px;font-weight:700;color:var(--accent);line-height:1.1}
+.stat-lbl{font-size:11px;color:var(--text2);margin-top:3px;font-weight:500}
+/* Time + Bytes row */
+.meta-row{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px}
+.meta-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:12px 14px;display:flex;align-items:center;gap:12px}
+.meta-icon{font-size:20px;flex-shrink:0}
+.meta-val{font-size:17px;font-weight:700;color:var(--text)}
+.meta-lbl{font-size:11px;color:var(--text2);margin-top:2px}
+/* Section heading */
+.section-h{font-size:11px;font-weight:700;color:var(--text2);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+/* Platform grid */
+.platforms-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(260px,1fr));gap:10px}
+.plat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:11px 13px}
+.plat-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:7px;gap:6px}
+.plat-name{font-size:13px;font-weight:600;white-space:nowrap}
+.plat-count{font-size:12px;font-weight:600;white-space:nowrap;color:var(--text2)}
+.plat-count.ok{color:var(--green)}
+.plat-count.warn{color:var(--yellow)}
+.plat-count.over{color:var(--red)}
+.progress-track{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.progress-fill{height:100%;border-radius:3px;transition:width .18s ease,background .18s ease;background:var(--green)}
+.progress-fill.warn{background:var(--yellow)}
+.progress-fill.over{background:var(--red)}
+/* Analysis section */
+.analysis-row{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:14px}
+/* Word frequency */
+.word-list{display:flex;flex-direction:column;gap:5px;margin-top:4px}
+.word-row{display:grid;grid-template-columns:22px 1fr auto;align-items:center;gap:8px}
+.word-rank{font-size:10px;font-weight:700;color:var(--text2);text-align:right}
+.word-bar-wrap{position:relative;height:22px;background:var(--bg);border-radius:4px;overflow:hidden;display:flex;align-items:center}
+.word-bar-bg{position:absolute;inset:0;background:rgba(88,166,255,.14);border-radius:4px;transition:width .25s ease}
+.word-txt{position:relative;padding:0 7px;font-size:13px;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+.word-cnt{font-size:11px;font-weight:700;color:var(--text2);white-space:nowrap}
+/* Collapsible */
+.coll-header{display:flex;justify-content:space-between;align-items:center;cursor:pointer;user-select:none}
+.coll-arrow{color:var(--text2);font-size:12px;transition:transform .2s}
+.coll-header.open .coll-arrow{transform:rotate(180deg)}
+.coll-body{display:none;margin-top:12px}
+.coll-body.open{display:block}
+/* Char frequency */
+.char-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(70px,1fr));gap:6px}
+.char-item{background:var(--bg);border:1px solid var(--border);border-radius:6px;padding:6px 8px;text-align:center}
+.char-ch{font-size:16px;font-weight:700;color:var(--accent);display:block;font-family:monospace}
+.char-n{font-size:11px;color:var(--text2)}
+.empty{color:var(--text2);font-size:13px;text-align:center;padding:18px 0}
+/* Responsive */
+@media(max-width:900px){
+  .analysis-row{grid-template-columns:1fr}
+  .stats-grid{grid-template-columns:repeat(3,1fr)}
+  .meta-row{grid-template-columns:1fr 1fr}
+}
+@media(max-width:580px){
+  .stats-grid{grid-template-columns:repeat(2,1fr)}
+  .meta-row{grid-template-columns:1fr}
+  header{padding:12px 16px}
+  main{padding:14px 12px 32px}
 }
 </style>
 </head>
 <body>
+
 <header>
-  <h1>Char Count</h1>
-  <p>Character counter with platform-specific limits</p>
+  <h1>Character Counter</h1>
+  <span class="sub">Live stats · 10 platform limits · word &amp; character frequency</span>
 </header>
+
 <main>
-  <div class="toolbar">
-    <button id="copyBtn" title="Copy stats as text">Copy Stats</button>
-    <button id="clearBtn" title="Clear text">Clear</button>
+
+  <!-- Textarea -->
+  <div class="input-card">
+    <div class="input-toolbar">
+      <span class="input-label">Your Text</span>
+      <div class="btn-group">
+        <button id="copyBtn" onclick="copyText()">Copy Text</button>
+        <button onclick="clearText()">Clear</button>
+      </div>
+    </div>
+    <textarea id="textInput" placeholder="Start typing or paste your text here…" oninput="update()" autofocus></textarea>
   </div>
-  <textarea id="input" placeholder="Start typing or paste your text here..." autofocus></textarea>
-  <div class="stats-grid" id="statsGrid"></div>
-  <h2>Platform Limits</h2>
-  <div class="platform-list" id="platforms"></div>
-  <div class="freq-section">
-    <h2>Character Frequency (Top 10)</h2>
-    <div id="freqContainer"></div>
+
+  <!-- Core stats -->
+  <div class="stats-grid">
+    <div class="stat-card"><div class="stat-val" id="sChars">0</div><div class="stat-lbl">Characters</div></div>
+    <div class="stat-card"><div class="stat-val" id="sCharsNS">0</div><div class="stat-lbl">Chars (no spaces)</div></div>
+    <div class="stat-card"><div class="stat-val" id="sWords">0</div><div class="stat-lbl">Words</div></div>
+    <div class="stat-card"><div class="stat-val" id="sSentences">0</div><div class="stat-lbl">Sentences</div></div>
+    <div class="stat-card"><div class="stat-val" id="sParas">0</div><div class="stat-lbl">Paragraphs</div></div>
+    <div class="stat-card"><div class="stat-val" id="sLines">0</div><div class="stat-lbl">Lines</div></div>
   </div>
+
+  <!-- Reading time + bytes -->
+  <div class="meta-row">
+    <div class="meta-card">
+      <div class="meta-icon">&#128214;</div>
+      <div><div class="meta-val" id="mRead">0 sec</div><div class="meta-lbl">Reading time (200 wpm)</div></div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-icon">&#127897;&#65039;</div>
+      <div><div class="meta-val" id="mSpeak">0 sec</div><div class="meta-lbl">Speaking time (130 wpm)</div></div>
+    </div>
+    <div class="meta-card">
+      <div class="meta-icon">&#128190;</div>
+      <div><div class="meta-val" id="mBytes">0 B</div><div class="meta-lbl">Byte size (UTF-8)</div></div>
+    </div>
+  </div>
+
+  <!-- Platform limits -->
+  <div>
+    <div class="section-h">Platform Limits</div>
+    <div class="platforms-grid" id="platformsGrid"></div>
+  </div>
+
+  <!-- Analysis -->
+  <div class="analysis-row">
+
+    <!-- Top 10 words -->
+    <div class="card">
+      <div class="section-h" style="margin-bottom:8px">Top 10 Words</div>
+      <div class="word-list" id="wordList"><div class="empty">No text yet</div></div>
+    </div>
+
+    <!-- Char frequency (collapsible) -->
+    <div class="card">
+      <div class="coll-header" id="charToggle" onclick="toggleChar()">
+        <div class="section-h" style="margin-bottom:0">Character Frequency</div>
+        <span class="coll-arrow">&#9660;</span>
+      </div>
+      <div class="coll-body" id="charBody">
+        <div class="char-grid" id="charGrid"><div class="empty" style="grid-column:1/-1">No text yet</div></div>
+      </div>
+    </div>
+
+  </div>
+
 </main>
-<footer>
-  <a href="https://yurukusa.github.io/dev-toolkit/">Dev Toolkit</a> — 74+ free browser-based developer tools
-</footer>
+
 <script>
 (function(){
-  const input = document.getElementById('input');
-  const statsGrid = document.getElementById('statsGrid');
-  const platformsEl = document.getElementById('platforms');
-  const freqContainer = document.getElementById('freqContainer');
-  const copyBtn = document.getElementById('copyBtn');
-  const clearBtn = document.getElementById('clearBtn');
-
-  const statDefs = [
-    {key:'chars', label:'Characters'},
-    {key:'charsNoSpace', label:'No Spaces'},
-    {key:'words', label:'Words'},
-    {key:'sentences', label:'Sentences'},
-    {key:'paragraphs', label:'Paragraphs'},
-    {key:'lines', label:'Lines'},
-    {key:'bytes', label:'Bytes (UTF-8)'}
+  const PLATFORMS = [
+    {name:'Twitter / X',        limit:280},
+    {name:'SMS',                limit:160},
+    {name:'Meta Title',         limit:60},
+    {name:'Meta Description',   limit:160},
+    {name:'YouTube Title',      limit:100},
+    {name:'Reddit Title',       limit:300},
+    {name:'Instagram Caption',  limit:2200},
+    {name:'LinkedIn Post',      limit:3000},
+    {name:'YouTube Description',limit:5000},
+    {name:'Slack Message',      limit:40000},
   ];
 
-  const platforms = [
-    {name:'Twitter / X', max:280, unit:'chars'},
-    {name:'Instagram Caption', max:2200, unit:'chars'},
-    {name:'LinkedIn Post', max:3000, unit:'chars'},
-    {name:'YouTube Title', max:100, unit:'chars'},
-    {name:'Meta Title', max:60, unit:'chars'},
-    {name:'Meta Description', max:160, unit:'chars'},
-    {name:'SMS', max:160, unit:'chars', sms:true},
-    {name:'Slack Message', max:40000, unit:'chars'}
-  ];
+  const STOP = new Set('the a an and or but in on at to for of with by from is are was were be been being have has had do does did will would could should may might shall can that this these those it its i you he she we they me him her us them my your his our their what which who not no so as if up out about into than then there when where how all also just more some one two other new first last after before very too only like well even back still any each much most over such own same make made said get got go come know see take think look want give use find tell ask seem put keep let set turn call try move live play feel help show hear run work bring hold write stand follow'.split(' '));
 
-  // Build stat cards
-  statDefs.forEach(s => {
-    const card = document.createElement('div');
-    card.className = 'stat-card';
-    card.innerHTML = `<div class="value" id="stat-${s.key}">0</div><div class="label">${s.label}</div>`;
-    statsGrid.appendChild(card);
+  // Build platform cards
+  const grid = document.getElementById('platformsGrid');
+  PLATFORMS.forEach((p, i) => {
+    const c = document.createElement('div');
+    c.className = 'plat-card';
+    c.innerHTML = `<div class="plat-header">
+      <span class="plat-name">${p.name}</span>
+      <span class="plat-count ok" id="pc${i}">0 / ${p.limit.toLocaleString()}</span>
+    </div>
+    <div class="progress-track"><div class="progress-fill" id="pf${i}" style="width:0%"></div></div>`;
+    grid.appendChild(c);
   });
 
-  // Build platform bars
-  platforms.forEach((p, i) => {
-    const div = document.createElement('div');
-    div.className = 'platform';
-    div.id = `plat-${i}`;
-    div.innerHTML = `
-      <div class="platform-header">
-        <span class="platform-name">${p.name}</span>
-        <span class="platform-count"><span id="plat-count-${i}">0 / ${p.max.toLocaleString()}</span><span class="pct" id="plat-pct-${i}">0%</span></span>
-      </div>
-      <div class="bar-bg"><div class="bar-fill" id="plat-bar-${i}"></div></div>
-      ${p.sms ? '<div class="note" id="sms-note">1 segment</div>' : ''}`;
-    platformsEl.appendChild(div);
-  });
-
-  function utf8Bytes(str) {
-    return new Blob([str]).size;
+  // Formatters
+  function fmtTime(mins){
+    if(mins===0)return'0 sec';
+    const s=Math.round(mins*60);
+    if(s<60)return s+' sec';
+    const m=Math.floor(s/60),r=s%60;
+    return r?`${m}m ${r}s`:`${m} min`;
   }
-
-  function barColor(pct) {
-    if (pct <= 70) return 'var(--green)';
-    if (pct <= 90) return 'var(--yellow)';
-    return 'var(--red)';
+  function fmtBytes(b){
+    if(b===0)return'0 B';
+    if(b<1024)return b+' B';
+    if(b<1048576)return(b/1024).toFixed(1)+' KB';
+    return(b/1048576).toFixed(2)+' MB';
   }
+  function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
 
-  function smsSegments(len) {
-    if (len === 0) return 0;
-    if (len <= 160) return 1;
-    return Math.ceil(len / 153);
-  }
-
-  function getFrequency(text) {
-    const freq = {};
-    for (const ch of text) {
-      freq[ch] = (freq[ch] || 0) + 1;
-    }
-    return Object.entries(freq)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 10);
-  }
-
-  function charLabel(ch) {
-    if (ch === ' ') return 'Space';
-    if (ch === '\n') return '\\n';
-    if (ch === '\t') return '\\t';
-    if (ch === '\r') return '\\r';
-    return ch;
-  }
-
-  function update() {
-    const text = input.value;
+  function update(){
+    const text = document.getElementById('textInput').value;
     const chars = text.length;
-    const charsNoSpace = text.replace(/\s/g, '').length;
-    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-    const sentences = text.trim() === '' ? 0 : text.split(/[.!?]+/).filter(s => s.trim()).length;
-    const paragraphs = text.trim() === '' ? 0 : text.split(/\n\s*\n/).filter(p => p.trim()).length;
-    const lines = text === '' ? 0 : text.split('\n').length;
-    const bytes = utf8Bytes(text);
+    const charsNS = text.replace(/\s/g,'').length;
+    const words = text.trim()===''?0:text.trim().split(/\s+/).filter(w=>w).length;
+    const sentences = text.trim()===''?0:(text.match(/[^.!?]*[.!?]+/g)||[]).length;
+    const paras = text.trim()===''?0:text.split(/\n\s*\n/).filter(p=>p.trim()).length;
+    const lines = text===''?0:text.split('\n').length;
+    const bytes = new TextEncoder().encode(text).length;
 
-    const stats = {chars, charsNoSpace, words, sentences, paragraphs, lines, bytes};
-    statDefs.forEach(s => {
-      document.getElementById(`stat-${s.key}`).textContent = stats[s.key].toLocaleString();
-    });
+    document.getElementById('sChars').textContent    = chars.toLocaleString();
+    document.getElementById('sCharsNS').textContent  = charsNS.toLocaleString();
+    document.getElementById('sWords').textContent    = words.toLocaleString();
+    document.getElementById('sSentences').textContent= sentences.toLocaleString();
+    document.getElementById('sParas').textContent    = paras.toLocaleString();
+    document.getElementById('sLines').textContent    = lines.toLocaleString();
+    document.getElementById('mRead').textContent     = fmtTime(words/200);
+    document.getElementById('mSpeak').textContent    = fmtTime(words/130);
+    document.getElementById('mBytes').textContent    = fmtBytes(bytes);
 
-    // Platform bars
-    platforms.forEach((p, i) => {
-      const current = chars;
-      const pct = p.max === 0 ? 0 : Math.min((current / p.max) * 100, 100);
-      const bar = document.getElementById(`plat-bar-${i}`);
-      bar.style.width = pct + '%';
-      bar.style.background = current === 0 ? 'var(--border)' : barColor(pct);
-      document.getElementById(`plat-count-${i}`).textContent = `${current.toLocaleString()} / ${p.max.toLocaleString()}`;
-      const pctEl = document.getElementById(`plat-pct-${i}`);
-      pctEl.textContent = Math.round(pct) + '%';
-      pctEl.style.color = current === 0 ? 'var(--text2)' : barColor(pct);
-
-      if (p.sms) {
-        const segs = smsSegments(chars);
-        document.getElementById('sms-note').textContent = segs === 0 ? '0 segments' : segs === 1 ? '1 segment' : `${segs} segments (${segs * 153} chars capacity)`;
+    // Platform bars — colour thresholds: yellow >=80%, red >=100%
+    PLATFORMS.forEach((p,i)=>{
+      const ratio = chars/p.limit;
+      const pct   = Math.min(ratio*100,100);
+      const fill  = document.getElementById('pf'+i);
+      const cnt   = document.getElementById('pc'+i);
+      fill.style.width = pct+'%';
+      const cls = ratio>=1?'over':ratio>=0.8?'warn':'';
+      fill.className = 'progress-fill'+(cls?' '+cls:'');
+      cnt.className  = 'plat-count '+(cls||'ok');
+      if(ratio>=1){
+        cnt.textContent = '+'+Math.abs(p.limit-chars).toLocaleString()+' over';
+      } else {
+        cnt.textContent = chars.toLocaleString()+' / '+p.limit.toLocaleString();
       }
     });
 
-    // Frequency table
-    if (text.length === 0) {
-      freqContainer.innerHTML = '<div class="empty-msg">Type something to see character frequency</div>';
-      return;
-    }
-    const freq = getFrequency(text);
-    const maxCount = freq[0] ? freq[0][1] : 1;
-    let html = '<table class="freq-table"><thead><tr><th>Char</th><th>Count</th><th>%</th><th class="bar-cell">Distribution</th></tr></thead><tbody>';
-    freq.forEach(([ch, count]) => {
-      const pct = ((count / chars) * 100).toFixed(1);
-      const barW = (count / maxCount) * 100;
-      html += `<tr><td class="char-cell">${charLabel(ch)}</td><td>${count.toLocaleString()}</td><td>${pct}%</td><td class="bar-cell"><div class="freq-bar-bg"><div class="freq-bar" style="width:${barW}%"></div></div></td></tr>`;
-    });
-    html += '</tbody></table>';
-    freqContainer.innerHTML = html;
+    updateWords(text);
+    if(document.getElementById('charBody').classList.contains('open')) updateChars(text);
   }
 
-  input.addEventListener('input', update);
-
-  clearBtn.addEventListener('click', () => {
-    input.value = '';
-    input.focus();
-    update();
-  });
-
-  copyBtn.addEventListener('click', () => {
-    const text = input.value;
-    const chars = text.length;
-    const charsNoSpace = text.replace(/\s/g, '').length;
-    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
-    const sentences = text.trim() === '' ? 0 : text.split(/[.!?]+/).filter(s => s.trim()).length;
-    const paragraphs = text.trim() === '' ? 0 : text.split(/\n\s*\n/).filter(p => p.trim()).length;
-    const lines = text === '' ? 0 : text.split('\n').length;
-    const bytes = utf8Bytes(text);
-
-    let out = `Characters: ${chars}\nCharacters (no spaces): ${charsNoSpace}\nWords: ${words}\nSentences: ${sentences}\nParagraphs: ${paragraphs}\nLines: ${lines}\nBytes (UTF-8): ${bytes}\n\nPlatform Limits:\n`;
-    platforms.forEach(p => {
-      const pct = p.max === 0 ? 0 : Math.round((chars / p.max) * 100);
-      out += `  ${p.name}: ${chars}/${p.max} (${Math.min(pct, 100)}%)${chars > p.max ? ' OVER' : ''}\n`;
+  function updateWords(text){
+    const el = document.getElementById('wordList');
+    if(!text.trim()){el.innerHTML='<div class="empty">No text yet</div>';return;}
+    const raw = text.toLowerCase().match(/[a-z']+/g)||[];
+    const freq = {};
+    raw.forEach(w=>{
+      const c=w.replace(/^'+|'+$/g,'');
+      if(c.length>1&&!STOP.has(c)) freq[c]=(freq[c]||0)+1;
     });
-    if (text.length > 0) {
-      const segs = smsSegments(chars);
-      out += `  SMS segments: ${segs}\n`;
+    const sorted = Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,10);
+    if(!sorted.length){el.innerHTML='<div class="empty">No significant words found</div>';return;}
+    const max = sorted[0][1];
+    el.innerHTML = sorted.map(([w,n],i)=>`
+      <div class="word-row">
+        <span class="word-rank">${i+1}</span>
+        <div class="word-bar-wrap">
+          <div class="word-bar-bg" style="width:${(n/max*100).toFixed(1)}%"></div>
+          <span class="word-txt">${esc(w)}</span>
+        </div>
+        <span class="word-cnt">${n}&times;</span>
+      </div>`).join('');
+  }
+
+  function updateChars(text){
+    const el = document.getElementById('charGrid');
+    if(!text.trim()){el.innerHTML='<div class="empty" style="grid-column:1/-1">No text yet</div>';return;}
+    const freq={};
+    for(const ch of text){
+      if(ch===' '||ch==='\n'||ch==='\t')continue;
+      freq[ch]=(freq[ch]||0)+1;
     }
+    const sorted=Object.entries(freq).sort((a,b)=>b[1]-a[1]).slice(0,30);
+    if(!sorted.length){el.innerHTML='<div class="empty" style="grid-column:1/-1">No printable characters</div>';return;}
+    el.innerHTML=sorted.map(([ch,n])=>`
+      <div class="char-item">
+        <span class="char-ch">${esc(ch)}</span>
+        <span class="char-n">${n}&times;</span>
+      </div>`).join('');
+  }
 
-    navigator.clipboard.writeText(out).then(() => {
-      copyBtn.textContent = 'Copied!';
-      setTimeout(() => { copyBtn.textContent = 'Copy Stats'; }, 1500);
-    });
-  });
+  window.toggleChar = function(){
+    const h=document.getElementById('charToggle');
+    const b=document.getElementById('charBody');
+    h.classList.toggle('open');
+    b.classList.toggle('open');
+    if(b.classList.contains('open')) updateChars(document.getElementById('textInput').value);
+  };
 
+  window.copyText = async function(){
+    const text=document.getElementById('textInput').value;
+    if(!text)return;
+    try{
+      await navigator.clipboard.writeText(text);
+    }catch(e){
+      document.getElementById('textInput').select();
+      document.execCommand('copy');
+    }
+    const btn=document.getElementById('copyBtn');
+    const orig=btn.textContent;
+    btn.textContent='Copied!';
+    btn.classList.add('primary');
+    setTimeout(()=>{btn.textContent=orig;btn.classList.remove('primary');},1400);
+  };
+
+  window.clearText = function(){
+    document.getElementById('textInput').value='';
+    update();
+    document.getElementById('textInput').focus();
+  };
+
+  window.update = update;
   update();
 })();
 </script>
