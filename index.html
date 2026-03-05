@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Char Count — Character Counter with Platform Limits</title>
+<meta name="description" content="Count characters for Twitter, Instagram, LinkedIn, YouTube, SMS. Real-time stats, platform limits, UTF-8 bytes.">
+<meta property="og:title" content="Char Count — Character Counter with Platform Limits">
+<meta property="og:description" content="Count characters for Twitter, Instagram, LinkedIn, YouTube, SMS. Real-time stats, platform limits, UTF-8 bytes.">
+<meta property="og:type" content="website">
+<meta property="og:url" content="https://yurukusa.github.io/char-count/">
+<meta name="twitter:card" content="summary">
+<meta name="twitter:title" content="Char Count — Character Counter with Platform Limits">
+<meta name="twitter:description" content="Count characters for Twitter, Instagram, LinkedIn, YouTube, SMS. Real-time stats, platform limits, UTF-8 bytes.">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#0d1117;--surface:#161b22;--border:#30363d;--text:#e6edf3;--text2:#8b949e;--accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922}
+body{font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Helvetica,Arial,sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;flex-direction:column}
+a{color:var(--accent);text-decoration:none}
+a:hover{text-decoration:underline}
+header{text-align:center;padding:2rem 1rem 1rem}
+header h1{font-size:1.6rem;font-weight:600;margin-bottom:.4rem}
+header p{color:var(--text2);font-size:.9rem}
+main{max-width:960px;width:100%;margin:0 auto;padding:0 1rem 2rem;flex:1}
+.toolbar{display:flex;gap:.5rem;margin-bottom:.75rem;justify-content:flex-end}
+.toolbar button{background:var(--surface);color:var(--text);border:1px solid var(--border);padding:.4rem 1rem;border-radius:6px;cursor:pointer;font-size:.85rem;transition:border-color .15s}
+.toolbar button:hover{border-color:var(--accent)}
+textarea{width:100%;height:220px;background:var(--surface);color:var(--text);border:1px solid var(--border);border-radius:8px;padding:1rem;font-size:1rem;font-family:inherit;resize:vertical;outline:none;transition:border-color .15s}
+textarea:focus{border-color:var(--accent)}
+textarea::placeholder{color:var(--text2)}
+.stats-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(130px,1fr));gap:.75rem;margin:1.25rem 0}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.85rem 1rem;text-align:center}
+.stat-card .value{font-size:1.5rem;font-weight:700;color:var(--accent)}
+.stat-card .label{font-size:.75rem;color:var(--text2);margin-top:.2rem;text-transform:uppercase;letter-spacing:.04em}
+h2{font-size:1.1rem;font-weight:600;margin:1.5rem 0 .75rem;color:var(--text)}
+.platform-list{display:flex;flex-direction:column;gap:.6rem}
+.platform{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem}
+.platform-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem}
+.platform-name{font-size:.85rem;font-weight:600}
+.platform-count{font-size:.8rem;color:var(--text2)}
+.platform-count .pct{margin-left:.4rem;font-size:.75rem}
+.bar-bg{height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px;transition:width .15s,background .15s}
+.platform .note{font-size:.75rem;color:var(--text2);margin-top:.35rem}
+.freq-section{margin-top:1.5rem}
+.freq-table{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;overflow:hidden;border-spacing:0}
+.freq-table th,.freq-table td{padding:.5rem .75rem;text-align:left;font-size:.85rem;border-bottom:1px solid var(--border)}
+.freq-table th{color:var(--text2);font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.04em}
+.freq-table tr:last-child td{border-bottom:none}
+.freq-table .char-cell{font-family:"SFMono-Regular",Consolas,monospace;font-size:.95rem;min-width:3rem}
+.freq-table .bar-cell{width:50%}
+.freq-bar-bg{height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.freq-bar{height:100%;background:var(--accent);border-radius:2px}
+.empty-msg{color:var(--text2);font-size:.85rem;padding:1rem;text-align:center}
+footer{text-align:center;padding:1.5rem;color:var(--text2);font-size:.85rem;border-top:1px solid var(--border);margin-top:2rem}
+@media(max-width:600px){
+  .stats-grid{grid-template-columns:repeat(3,1fr);gap:.5rem}
+  .stat-card .value{font-size:1.2rem}
+  textarea{height:160px}
+}
+</style>
+</head>
+<body>
+<header>
+  <h1>Char Count</h1>
+  <p>Character counter with platform-specific limits</p>
+</header>
+<main>
+  <div class="toolbar">
+    <button id="copyBtn" title="Copy stats as text">Copy Stats</button>
+    <button id="clearBtn" title="Clear text">Clear</button>
+  </div>
+  <textarea id="input" placeholder="Start typing or paste your text here..." autofocus></textarea>
+  <div class="stats-grid" id="statsGrid"></div>
+  <h2>Platform Limits</h2>
+  <div class="platform-list" id="platforms"></div>
+  <div class="freq-section">
+    <h2>Character Frequency (Top 10)</h2>
+    <div id="freqContainer"></div>
+  </div>
+</main>
+<footer>
+  <a href="https://yurukusa.github.io/dev-toolkit/">Dev Toolkit</a> — 74+ free browser-based developer tools
+</footer>
+<script>
+(function(){
+  const input = document.getElementById('input');
+  const statsGrid = document.getElementById('statsGrid');
+  const platformsEl = document.getElementById('platforms');
+  const freqContainer = document.getElementById('freqContainer');
+  const copyBtn = document.getElementById('copyBtn');
+  const clearBtn = document.getElementById('clearBtn');
+
+  const statDefs = [
+    {key:'chars', label:'Characters'},
+    {key:'charsNoSpace', label:'No Spaces'},
+    {key:'words', label:'Words'},
+    {key:'sentences', label:'Sentences'},
+    {key:'paragraphs', label:'Paragraphs'},
+    {key:'lines', label:'Lines'},
+    {key:'bytes', label:'Bytes (UTF-8)'}
+  ];
+
+  const platforms = [
+    {name:'Twitter / X', max:280, unit:'chars'},
+    {name:'Instagram Caption', max:2200, unit:'chars'},
+    {name:'LinkedIn Post', max:3000, unit:'chars'},
+    {name:'YouTube Title', max:100, unit:'chars'},
+    {name:'Meta Title', max:60, unit:'chars'},
+    {name:'Meta Description', max:160, unit:'chars'},
+    {name:'SMS', max:160, unit:'chars', sms:true},
+    {name:'Slack Message', max:40000, unit:'chars'}
+  ];
+
+  // Build stat cards
+  statDefs.forEach(s => {
+    const card = document.createElement('div');
+    card.className = 'stat-card';
+    card.innerHTML = `<div class="value" id="stat-${s.key}">0</div><div class="label">${s.label}</div>`;
+    statsGrid.appendChild(card);
+  });
+
+  // Build platform bars
+  platforms.forEach((p, i) => {
+    const div = document.createElement('div');
+    div.className = 'platform';
+    div.id = `plat-${i}`;
+    div.innerHTML = `
+      <div class="platform-header">
+        <span class="platform-name">${p.name}</span>
+        <span class="platform-count"><span id="plat-count-${i}">0 / ${p.max.toLocaleString()}</span><span class="pct" id="plat-pct-${i}">0%</span></span>
+      </div>
+      <div class="bar-bg"><div class="bar-fill" id="plat-bar-${i}"></div></div>
+      ${p.sms ? '<div class="note" id="sms-note">1 segment</div>' : ''}`;
+    platformsEl.appendChild(div);
+  });
+
+  function utf8Bytes(str) {
+    return new Blob([str]).size;
+  }
+
+  function barColor(pct) {
+    if (pct <= 70) return 'var(--green)';
+    if (pct <= 90) return 'var(--yellow)';
+    return 'var(--red)';
+  }
+
+  function smsSegments(len) {
+    if (len === 0) return 0;
+    if (len <= 160) return 1;
+    return Math.ceil(len / 153);
+  }
+
+  function getFrequency(text) {
+    const freq = {};
+    for (const ch of text) {
+      freq[ch] = (freq[ch] || 0) + 1;
+    }
+    return Object.entries(freq)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 10);
+  }
+
+  function charLabel(ch) {
+    if (ch === ' ') return 'Space';
+    if (ch === '\n') return '\\n';
+    if (ch === '\t') return '\\t';
+    if (ch === '\r') return '\\r';
+    return ch;
+  }
+
+  function update() {
+    const text = input.value;
+    const chars = text.length;
+    const charsNoSpace = text.replace(/\s/g, '').length;
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    const sentences = text.trim() === '' ? 0 : text.split(/[.!?]+/).filter(s => s.trim()).length;
+    const paragraphs = text.trim() === '' ? 0 : text.split(/\n\s*\n/).filter(p => p.trim()).length;
+    const lines = text === '' ? 0 : text.split('\n').length;
+    const bytes = utf8Bytes(text);
+
+    const stats = {chars, charsNoSpace, words, sentences, paragraphs, lines, bytes};
+    statDefs.forEach(s => {
+      document.getElementById(`stat-${s.key}`).textContent = stats[s.key].toLocaleString();
+    });
+
+    // Platform bars
+    platforms.forEach((p, i) => {
+      const current = chars;
+      const pct = p.max === 0 ? 0 : Math.min((current / p.max) * 100, 100);
+      const bar = document.getElementById(`plat-bar-${i}`);
+      bar.style.width = pct + '%';
+      bar.style.background = current === 0 ? 'var(--border)' : barColor(pct);
+      document.getElementById(`plat-count-${i}`).textContent = `${current.toLocaleString()} / ${p.max.toLocaleString()}`;
+      const pctEl = document.getElementById(`plat-pct-${i}`);
+      pctEl.textContent = Math.round(pct) + '%';
+      pctEl.style.color = current === 0 ? 'var(--text2)' : barColor(pct);
+
+      if (p.sms) {
+        const segs = smsSegments(chars);
+        document.getElementById('sms-note').textContent = segs === 0 ? '0 segments' : segs === 1 ? '1 segment' : `${segs} segments (${segs * 153} chars capacity)`;
+      }
+    });
+
+    // Frequency table
+    if (text.length === 0) {
+      freqContainer.innerHTML = '<div class="empty-msg">Type something to see character frequency</div>';
+      return;
+    }
+    const freq = getFrequency(text);
+    const maxCount = freq[0] ? freq[0][1] : 1;
+    let html = '<table class="freq-table"><thead><tr><th>Char</th><th>Count</th><th>%</th><th class="bar-cell">Distribution</th></tr></thead><tbody>';
+    freq.forEach(([ch, count]) => {
+      const pct = ((count / chars) * 100).toFixed(1);
+      const barW = (count / maxCount) * 100;
+      html += `<tr><td class="char-cell">${charLabel(ch)}</td><td>${count.toLocaleString()}</td><td>${pct}%</td><td class="bar-cell"><div class="freq-bar-bg"><div class="freq-bar" style="width:${barW}%"></div></div></td></tr>`;
+    });
+    html += '</tbody></table>';
+    freqContainer.innerHTML = html;
+  }
+
+  input.addEventListener('input', update);
+
+  clearBtn.addEventListener('click', () => {
+    input.value = '';
+    input.focus();
+    update();
+  });
+
+  copyBtn.addEventListener('click', () => {
+    const text = input.value;
+    const chars = text.length;
+    const charsNoSpace = text.replace(/\s/g, '').length;
+    const words = text.trim() === '' ? 0 : text.trim().split(/\s+/).length;
+    const sentences = text.trim() === '' ? 0 : text.split(/[.!?]+/).filter(s => s.trim()).length;
+    const paragraphs = text.trim() === '' ? 0 : text.split(/\n\s*\n/).filter(p => p.trim()).length;
+    const lines = text === '' ? 0 : text.split('\n').length;
+    const bytes = utf8Bytes(text);
+
+    let out = `Characters: ${chars}\nCharacters (no spaces): ${charsNoSpace}\nWords: ${words}\nSentences: ${sentences}\nParagraphs: ${paragraphs}\nLines: ${lines}\nBytes (UTF-8): ${bytes}\n\nPlatform Limits:\n`;
+    platforms.forEach(p => {
+      const pct = p.max === 0 ? 0 : Math.round((chars / p.max) * 100);
+      out += `  ${p.name}: ${chars}/${p.max} (${Math.min(pct, 100)}%)${chars > p.max ? ' OVER' : ''}\n`;
+    });
+    if (text.length > 0) {
+      const segs = smsSegments(chars);
+      out += `  SMS segments: ${segs}\n`;
+    }
+
+    navigator.clipboard.writeText(out).then(() => {
+      copyBtn.textContent = 'Copied!';
+      setTimeout(() => { copyBtn.textContent = 'Copy Stats'; }, 1500);
+    });
+  });
+
+  update();
+})();
+</script>
+</body>
+</html>
